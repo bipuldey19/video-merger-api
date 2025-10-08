@@ -4,6 +4,7 @@ import shutil
 import asyncio
 import uuid
 import logging
+import subprocess
 from typing import List, Optional
 from pathlib import Path
 
@@ -17,6 +18,31 @@ from PIL import Image, ImageDraw, ImageFont
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# FFmpeg setup for Vercel
+def setup_ffmpeg():
+    """Setup FFmpeg for Vercel environment"""
+    try:
+        # Check if ffmpeg is available
+        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+        logger.info("FFmpeg is available")
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        logger.info("FFmpeg not found, attempting to install...")
+        try:
+            from install_ffmpeg import install_ffmpeg
+            if install_ffmpeg():
+                logger.info("FFmpeg installed successfully")
+                return True
+            else:
+                logger.error("Failed to install FFmpeg")
+                return False
+        except ImportError:
+            logger.error("FFmpeg installer not available")
+            return False
+
+# Initialize FFmpeg
+ffmpeg_available = setup_ffmpeg()
 
 app = FastAPI(
     title="Video Merger API",
@@ -54,6 +80,13 @@ class VideoProcessor:
     
     async def download_m3u8_video(self, hls_url: str, output_path: str) -> str:
         """Download M3U8 video using ffmpeg"""
+        global ffmpeg_available
+        
+        if not ffmpeg_available:
+            error_msg = "FFmpeg not available. This is expected in some environments. Deploy with proper FFmpeg support."
+            logger.error(error_msg)
+            raise HTTPException(status_code=500, detail=error_msg)
+        
         try:
             (
                 ffmpeg
