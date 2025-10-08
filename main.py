@@ -19,27 +19,20 @@ from PIL import Image, ImageDraw, ImageFont
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# FFmpeg setup for Vercel
+# FFmpeg setup for production
 def setup_ffmpeg():
-    """Setup FFmpeg for Vercel environment"""
+    """Setup FFmpeg for production environment"""
     try:
         # Check if ffmpeg is available
         subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-        logger.info("FFmpeg is available")
+        logger.info("FFmpeg is available and ready for video processing")
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
-        logger.info("FFmpeg not found, attempting to install...")
-        try:
-            from install_ffmpeg import install_ffmpeg
-            if install_ffmpeg():
-                logger.info("FFmpeg installed successfully")
-                return True
-            else:
-                logger.error("Failed to install FFmpeg")
-                return False
-        except ImportError:
-            logger.error("FFmpeg installer not available")
-            return False
+        logger.error("FFmpeg not found! Please install FFmpeg on your system:")
+        logger.error("  Ubuntu/Debian: sudo apt install ffmpeg")
+        logger.error("  CentOS/RHEL: sudo yum install ffmpeg")
+        logger.error("  Or follow setup-vps.sh script")
+        return False
 
 # Initialize FFmpeg
 ffmpeg_available = setup_ffmpeg()
